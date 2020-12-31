@@ -1,16 +1,29 @@
+/*
+ * Copyright (c) 2011-2020, baomidou (jobob@qq.com).
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.baomidou.mybatisplus.extension.plugins.pagination;
+
+import com.baomidou.mybatisplus.core.toolkit.Assert;
+import lombok.Getter;
+import org.apache.ibatis.mapping.ParameterMapping;
+import org.apache.ibatis.session.Configuration;
 
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
-
-import org.apache.ibatis.mapping.ParameterMapping;
-import org.apache.ibatis.session.Configuration;
-
-import com.baomidou.mybatisplus.core.toolkit.Assert;
-
-import lombok.Getter;
 
 /**
  * 分页参数动态化所需 model
@@ -60,6 +73,14 @@ public class DialectModel {
      */
     private final long secondParam;
 
+    public DialectModel(String dialectSql) {
+        this(dialectSql, 0, 0);
+    }
+
+    public DialectModel(String dialectSql, long firstParam) {
+        this(dialectSql, firstParam, 0);
+    }
+
     public DialectModel(String dialectSql, long firstParam, long secondParam) {
         this.dialectSql = dialectSql;
         this.firstParam = firstParam;
@@ -68,11 +89,8 @@ public class DialectModel {
 
     /**
      * 设置消费 List<ParameterMapping> 的方式
-     * <p>
-     * 带下标的
-     * <p>
-     * mark: 标记一下,暂时没看到哪个数据库的分页方言会存在使用该方法
-     * </p>
+     * <p>带下标的</p>
+     * <p>mark: 标记一下,暂时没看到哪个数据库的分页方言会存在使用该方法</p>
      *
      * @return this
      */
@@ -91,8 +109,7 @@ public class DialectModel {
 
     /**
      * 设置消费 List<ParameterMapping> 的方式
-     * <p>
-     * 不带下标的
+     * <p>不带下标的</p>
      *
      * @return this
      */
@@ -108,8 +125,7 @@ public class DialectModel {
 
     /**
      * 设置消费 List<ParameterMapping> 的方式
-     * <p>
-     * 不带下标的,两个值都有
+     * <p>不带下标的,两个值都有</p>
      *
      * @return this
      */

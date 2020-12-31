@@ -1,5 +1,278 @@
 ﻿# CHANGELOG
 
+## [v3.4.1] 2020.11.10
+- feat: 公开 AbstractWrapper.getEntityClass
+- fix: 新多租户插件完善子查询,支持 比较符号,in,EXISTS,NOT EXISTS
+- feat: 新增 FakeTenantLineInnerInterceptor 对 TenantSqlParser 进行过度
+- feat: 分页count识别 `left join (subSelect)` 优化
+- feat: 所有 count 从 count(1) 变更为 count(*)
+- feat: mybatis up to 3.5.6
+
+## [v3.4.0] 2020.8.23
+- fix: @TableName.autoResultMap=true 情况下, 内置的 selectBody 将不会进行 as ,使用了的需要注意!!!
+- feat: 新增 mybatis-plus-boot-starter-test 模块
+- fix: MetaObjectHandler 重载错误(解决办法是参数位置对调),填充值在泛型上支持字段类型的子类
+- feat: mybatis up to 3.5.5, mybatis-spring up to 2.0.5
+- feat: jsqlparser up to 3.2
+- feat: 新增 MybatisParameterHandler, 废弃 MybatisDefaultParameterHandler
+- feat: 分页插件加入 GBase,ClickHouse,oscar,OceanBase 数据库连接自动识别的支持
+- feat: Wrapper 新增api not(boolean condition, Consumer consumer)
+- feat: 新增 MybatisPlusInterceptor 解决 多租户和分页 插件一级和二级缓存不正确问题
+- feat: 新分页插件优化 size<0 时继续拼接 orderBy
+- feat: 新增 IdentifierGenerator 一个实现类 ImadcnIdentifierGenerator
+- fix: chainWrapper#func 强转异常
+- fix(mybatis-plus-generator.main): 重构生成器数据库类型转换器，修复部分支条，提交选择器测试
+- fix: 修复复杂情况中动态表名替换产生的问题：正则由空白检测转为单词边界检测
+- refactor: 重构动态表名解析器，去除正则替换程序，改为按表名位置进行替换
+- refactor: 将表名解析重构为访问者模式，现在不会对原有 SQL 做改动
+
+
+## [v3.3.2] 2020.5.26
+- 分页参数提取,单元测试用例修复
+- 达梦数据库代码生成器表过滤支持
+- 微软数据库代码生成器表过滤支持
+- 修复代码生成器属性字段规则错误
+- SelectById 支持自定义方法名
+- 修复分页插件获取数据库类型问题
+- Json转换器空值处理
+- bugfix(mybatis-plus-generator):SQL类型返回错误问题
+- 调整未知方言异常,自动识别url转换小写匹配.
+- fix: 初始化 TableInfo 中遇到多个字段有 @TableId 注解时未能抛出异常的问题
+- SuperController有Class参数的set方法
+- 增加方法StrategyConfig.setSuperServiceImplClass(java.lang.Class<?>).
+- 代码生成器命名策略调整.
+- 扩展分页缓存key值计算.
+- 去除方法推测,直接访问属性字段.
+- 修正枚举处理器类型不匹配比较.
+- 修改表前缀匹配方式
+- 修改在Mybatis全局配置文件中设置分页插件参数不生效问题
+- 修复PR未指定解析器的时候引发空指针
+- 增加分页插件limit参数配置
+- 修复指定superEntityClass重复生成父类字段问题
+- 无主键的情况无需导入IdType与TableId包
+- 调整生成BaseResultMap格式
+- 支持lombok模式下选择是否进行链式set生成
+- 修复解析器for update错误
+- 过滤PG约束列(只留下主键约束)
+- 增加生成器禁用模板生成
+- fix(kotlin): 修复动态表名 BUG，最大努力替换表名
+- 修复PG约束生成重复属性字段问题
+- fix(kotlin): 将 LambdaUtils 中缓存的 key 改为 String
+- 代码生成器增加数据库关键字处理接口
+- fix github/issues/2454 支持注解可继承
+- 新增 AES 加密数据库用户名密码
+- 优化方法入参泛型，支持更多类型
+- 修复代码生成器开启移除is前缀生成实体缺少包导入
+- fixed github issues/2470
+
+
+## [v3.3.1] 2020.1.17
+- 新增`TableName`注解属性`excludeProperty`支持排除字段
+- 新增ServiceImpl#entityClass属性，减少泛型提取
+- 新增phoenix支持
+- 新增支持hbase的选装件`Upsert`
+- 新增生成器策略配置enableSqlFilter属性来控制是否启用SQL过滤表支持
+- 新增批量执行方法，方便用户自定义批量执行操作
+- `Wrapper`支持`clear`清空
+- `Wrapper`子类新增`func`方法,主要为了支持在`if else`情况下使用`Wrapper`的不同method不会导致断链(链式调用不能一链到底)
+- `BaseMapper`部分入参为`Wrapper`的select方法支持`wrapper.first`来设置RDS的hint
+- `KtUpdateWrapper#set`支持value为null
+- 支持泛型主键支持
+- 优化分页拦截器数据类型与方言实现类配置
+- 二级缓存复用count查询缓存
+- `IService`部分method调整为default方法
+- 二级缓存兼容json序列化情况（主要出现默认缓存count出现long反序列化回来为int的情况）
+- 处理批量操作嵌套事物问题（二级缓存更新问题）
+- 修复启用乐观锁下updateById时自动填充不生效的问题
+- 修复自动填充接口的default方法(`setFieldValByName`和`getFieldValByName`)某些情况下会发生异常的问题
+- 修复`KtWrapper`嵌套函数问题
+- 修复Freemarker生成Kotlin类的常量错误
+- 修复StringUtils#guessGetterName错误
+- 修复SerializationUtils资源未释放问题
+
+## [v3.3.0] 2019.12.06
+- BaseMapper 接口两个 page 方法优化
+- IService 以及 ServiceImpl 对应 page 方法优化,个别返回 collection 的方法修改为返回 list
+- 逻辑删除字段的两个表示已删除和未删除的定义支持字符串 `"null"`
+- 修复批量操作未清空缓存
+- 批量操作异常转换为DataAccessException
+- mybatis up 3.5.3, mybatis-spring up 2.0.3, jsqlparser up 3.1
+- mapper 选装件包调整, chainWrapper 包调整
+- 新增 ChainWrappers 工具类
+- 新增 IdentifierGenerator 接口,支持自定义Id生成
+- 代码生成工具废弃正则表名匹配,新增likeTable与notLikeTable
+- 分页插件支持自定义处理页数限制与溢出总页数处理
+- 修复SqlExplainInterceptor导致的Oracle序列自增两次
+- 分页二级缓存支持
+- 扩展p6spy日志打印
+- DbConfig加入新属性propertyFormat,TableFieldInfo移除属性related
+- 优化序列生成器,过时KeySequence的clazz属性
+- 修复Ognl表达式关键字导致的null值判断失效
+- 修复更新填充开关失效
+- 优化填充逻辑
+- ISqlRunner支持selectPage
+- 支持全局逻辑删除字段
+- BaseMapper的方法可自定义
+- 添加【虚谷】【Oracle12c】【Kingbase】数据库支持
+- 解决数据库字段与实体字段名称不同时出现`null as xxx`的情况
+- 过时ID_WORKER_STR,自动识别主键类型
+- 配置开启注解，TableName也强制生成
+
+## [v3.2.0] 2019.08.26
+- 代码生成器添加达梦数据库支持
+- 修复多主键查询表字段SQL的Bug
+- 新增 updateWrapper 尝试更新，否继续执行saveOrUpdate(T)方法
+- 代码生成器 pg 增加 numeric instant 类型支持
+- 修复InjectionConfig不存在时无法生成代码的问题
+- fix: #1386(github) 逻辑删除字段为Date类型并且非删除数据日期为null
+- 升级依赖 mybatis 版本为 3.5.2
+- 升级依赖 jsqlparser 版本为 2.1
+- 应 EasyScheduler 计划提交 Apache 孵化请求移除 996NPL 协议限制
+- 调整 SQL 移除 SET 部分 Github/1460
+- 移除 SqlMethod 枚举 UPDATE_ALL_COLUMN_BY_ID 属性，推荐使用 AlwaysUpdateSomeColumnById 套
+- fix: #1412(github) github:mybatis-plus-generator can't support oracle
+- fix: github 1380
+- 移除全局配置的 dbType 和 columnLike
+- 移除 fieldStrategy, 使用上个版本新增的三个替代
+- 移除 PerformanceInterceptor 相关, 建议使用 p6spy
+- 移除 el 拆分为 jdbcType typeHandler 等具体属性
+- 升级 gradle-5.5.1,lombok-1.18.4
+- 当selectStatement.getSelectBody()的类型为SetOperationList
+- 移除 GlobalConfig#sqlParserCache 属性,移除 LogicSqlInjector, OrderItem 新增2个快捷生成的method, page 新增一个入参是 List<OrderItem> 的 addOrder method
+- Nested 接口个别入参是 `Function<Param, Param> func` 的method,入参更改为 `Consumer<Param> consumer`,不影响规范的使用
+- fixed gitee/I10XWC 允许根据 TableField 信息判断自定义类型
+- Merge pull request #1445 from kana112233/3.0
+- 支持过滤父类属性功能
+- 添加批量异常捕获测试
+- 多租户ID 值表达式，支持多个 ID 条件查询
+- 扩展新增 json 类型处理器 jackson fastjson 两种实现
+
+
+## [v3.1.2] 2019.06.26
+- EnumTypeHandler 更名为 MybatisEnumTypeHandler,移除 EnumAnnotationTypeHandler
+- 新增自动构建 resultMap 功能,去除转义符
+- 注解增加变量控制是否自动生成resultmap
+- 修改分页缓存Key值错误
+- TableField.el 属性标记过时
+- 取消 MybatisMapWrapperFactory 的自动注册
+- starter 增加默认xml路径扫描
+- 新增 MybatisPlusPropertiesCustomizer 及配置使用
+- ConfigurationCustomizer 内部方法入参更新为 MybatisConfiguration
+- 原有 fieldStrategy 标记过时,新增 3 种 fieldStrategy 进行区分
+- 获取注入方法时传递当前mapperClass
+- 增加sqlite代码自动生成测试代码及测试用的数据库文件
+- JsqlParserCountOptimize 对 left join 的 sql 优化 count 更精确
+- fix(AbstractWrapper.java): 修复 lambda 表达式在 order、groupBy 只有条件一个时引起的类型推断错误
+- apply plugin: 'kotlin'
+- refactor(order): 修复排序字段优先级问题(#IX1QO)
+- 启动就缓存 lambdacache
+- Merge pull request #1213 from sandynz/feature/sqlComment 支持SQL注释
+- 去除 wrapper 的一些变量,wrapper 内部 string 传递优化
+- fix: #1160(github) 分页组件orderBy: 同时存在group by 和order by，且IPage 参数中存在排序属性时，拼接
+- Merge pull request #1253 from ShammgodYoung/patch-1 代码生成器输入表名忽略大小写
+- 新增渲染对象 MAP 信息预处理注入
+- 修改 dts rabbitAdmin bean 判断方式
+- Merge pull request #1255 from ShammgodYoung/patch-2 对serialVersionUID属性进行缩进
+- JsqlParserCountOptimize 加入 boolean 字段,判断是否优化 join
+- Merge pull request #1256 from baomidou/master Master
+- freemarker entity 模板缩进调整
+- 增加jdbcType,typeHandler属性, 合并el属性
+
+
+## [v3.1.1] 2019.04.25
+- 新增 996icu license 协议
+- 新增 mybatis-plus-dts 分布式事务 rabbit 可靠消息机制
+- 新增 DynamicTableNameParser 解析器、支持动态表名
+- 优化 getOne 日志打印
+- sql 优化跳过存储过程
+- 优化分页查询(count为0不继续查询)
+- 修复分页一级缓存无法继续翻页问题
+- MybatisMapWrapperFactory 自动注入
+- 支持纯注解下使用 IPage 的子类作为返回值
+- 逻辑删除不再需要 LogicInject
+- GlobalConfig 加入 enableSqlRunner 属性控制是否注入 SqlRunner ,默认 false
+- SqlParser注解不再需要全局设置参数才会缓存,以及支持注解在 mapper 上
+- GlobalConfig 的 sqlParserCache 设置为过时
+- mybatis 升级到 3.5.1 , mybatis-spring 升级到 2.0.1 , jsqlparser 降级到 1.2
+- ISqlInjector 接口 移除 injectSqlRunner 方法
+- SqlFormatter 类设置为过时
+- 解决自动注入的 method 的 SqlCommandType 在逻辑删除下混乱问题
+- 新增 AlwaysUpdateSomeColumnById 选装件
+- SFunction 继承 Function
+- DbConfig 的 columnLike 和 dbType 属性设置为过时
+- DbConfig 新增 schema 和 columnFormat 属性
+- TableField 注解增加 keepGlobalFormat 属性
+- TableName 注解增加 schema 和 keepGlobalPrefix 属性
+- fixed bug tmp文件格式错乱 github #1048
+- 处理表/字段名称抽象 INameConvert 接口策略 github #1038
+- DB2支持动态 schema 配置 github #1035
+- 把字段缓存的key从className替换成了.class, 如果使用dev-tools会导致：MybatisPlusException: Your property named "xxxx" cannot find the corresponding database column name!(解决方案：去掉dev-tools)
+
+
+## [v3.1.0] 2019.02.24
+- 升级 `mybatis` 到 `3.5.0` 版本
+- 升级 `mybatis-spring` 到 `2.0.0` 版本
+- 升级 `jsqlparser` 到 `1.4` 版本
+- 新增 p6spy 日志打印支持
+- 变更 `IService` 的 `getOne(Wrapper<T> queryWrapper)` 方法如果获取到多条数据将会抛出 `TooManyResultsException` 异常
+- 修复 自定义分页功能不支持注解 `@select` 问题
+- 修复 生成器的配置 kotlin 模式下 swagger 模式无效问题
+- 修复 生成器 is 开头字段无法自动注解问题
+- 修复 生成器 Serializable Active 模式继承父类包自动导入异常问题
+- 修复 生成器 支持公共字段自动读取父类 class 属性问题
+- 修复 枚举(注解方式)转换器在存储过程中转换失败
+- 修复 beetl 模板逻辑删除注解错误问题
+- 修复 通过 `mybatis-config.xml` 方式构建的 `Configuration` 的 `mapUnderscoreToCamelCase` 默认值非 `true` 的问题
+- 修复 sql解析器动态代理引发的bug
+- 修复 `mapper` 使用纯注解下可能触发的重试机制在个别情况下启动报错的问题
+- 优化 支持指定 `defaultEnumTypeHandler` 来进行通用枚举处理
+- 优化 从 hibernate copy 最新代码到 SqlFormatter
+- 移除 `wrapper` 的 `in` 以及 `notIn` 方法内部对入参 `coll` 及 `动态数组` 的非empty判断(**注意: 如果以前有直接使用以上的方法的入参可能为 empty 的现在会产出如下sql: `in ()` 或 `not in ()` 导致报错**)
+- 移除 `wrapper` 的 `notInOrThrow` 和 `inOrThrow` 方法(**使用新版的 `in` 以及 `notIn` 效果一样,异常则为sql异常**)
+- 移除 `IService` 的 `query` 链式调用的 `delete` 操作
+- 移除 xml 热加载相关配置项,只保留`MybatisMapperRefresh`该类并打上过时标志
+- 日常优化
+
+## [v3.0.7.1] 2019.01.02
+- 修复 lambdaWrapper 的获取不到主键缓存的问题
+- 优化 `IService` 新增的 `update` 链式调用支持 `remove` 操作
+- 过时 `IService` 新增的 `query` 链式调用的 `delete` 打上过时标识
+- 日常优化
+
+
+## [v3.0.7] 2019.01.01
+- 优化 generator 的 postgresSql 数据库支持生成 java8 时间类型
+- 优化 generator 的 sqlServer 数据库支持生成 java8 时间类型
+- 优化 LambdaWrapper 反射获取字段信息支持首字母大写的字段
+- 优化 仅 LambdaWrapper 的 select 优化(支持字段对不上数据库时自动 as)
+- 优化 重复扫描 `BaseMapper` 子类时,`TableInfo` 缓存的 `Configuration` 只保留最后一个
+- 优化 `MergeSegments` 获取 `getSqlSegment` 方式
+- 优化 SQL 自动注入器的初始化 modelClass 过程,提高初始化速度
+- 优化 `BaseMapper` 的 `update` 方法的第一个入参支持为 `null`
+- 新增 `IService` 增加4个链式调用方法
+- 新增 代码生成器增加 `beetl` 模板
+- 新增 `IdWorker` 增加毫秒时间 ID 可用于订单 ID
+- 新增 wrapper 新增 `inOrThrow` 方法,入参为 empty 则抛出 `MybatisPlusExcuption` 异常
+- 新增 `MetaObjectHandler` 新提供几个能根据注解才插入值的 `default` 方法
+- 新增 kotlin 下 lambda 的支持,`KtQueryWrapper` 和 `KtUpdateWrapper`类
+- 新增 简化MP自定义SQL使用方法,现在可以使用 `自定义sql` + ${ew.customSqlSegment} 方式
+- 新增 提供新的 `InsertBatchSomeColumn` 选装件
+- 修复 Page` 的 `setTotal(Long total)` -> `setTotal(long total)`
+- 修复 `Page` 的 `setSearchCount` 为 `public`
+- 修复 `TenantSqlParser` 如果 where 条件的开头是一个 `orExpression`，直接在左边用and拼接租户信息会造成逻辑不符合预期的问题
+- 修复 wrapper 的 `lambda` 方法会向下传递 sqlSelect
+- 修复 `ServiceImpl` 个别 batch 操作 `flushStatements` 问题
+- 修复 selectObjs 泛型错误问题
+- 移除 `InsertBatchAllColumn` 选装件
+- 移除 `ServiceImpl` 的 batch 操作之外的事务注解
+- 移除 `Model` 的事务注解
+- 移除 `AbstractSqlInjector` 的 `isInjectSqlRunner` 方法(SqlRunner初始化较早，目前isInjectSqlRunner无法控制)
+- 移除 `MybatisSessionFactoryBuilder`
+- 移除 对 `mybatis-plus-generator` 包的依赖,自己按需引入
+- 还原 xml 热加载,打上过时标识
+- 升级 jsqlparser 依赖到 1.3
+- 日常优化
+
 
 ## [v3.0.6] 2018.11.18
 - 修复entity中2个以上条件并且拼接ODER BY 或 GROUP BY 产生的 WHERE X1 =? AND X2
@@ -20,7 +293,7 @@
 - batchsize 阈值设 30 修改为 1000 提升效率
 - 修复在极端情况下saveOrUpdate执行错误
 - 移除 MybatisSqlSessionTemplate
-- 优化 xml 热加载
+- 移除 xml 热加载
 - 其他优化
 
 
@@ -67,7 +340,7 @@
 - 其他优化
 
 
-## [v3.0.2] 2018.09.11 
+## [v3.0.2] 2018.09.11
 - 新增 Wrapper 条件辅助类
 - 新增 banner 属性控制是否打印
 - 修复 gitee #IMMF4:批量插入(AR)事务无效
@@ -78,7 +351,7 @@
 - 优化扩展性其他
 
 
-## [v3.0.1] 2018.08.31 
+## [v3.0.1] 2018.08.31
 - 修复代码生成器设置表前缀异常
 - 新增 EnumValue 注解方式扫描通用枚举处理
 - 修复逻辑删除混用失败
@@ -86,7 +359,7 @@
 - 新增测试用例及其他
 
 
-## [v3.0-RELEASE] 2018.08.28 代号：超级棒棒糖 🍭 
+## [v3.0-RELEASE] 2018.08.28 代号：超级棒棒糖 🍭
 - 乐观锁 update(et,ew)方法 et带上 version 注解字段回写
 - 优化改进优化代码生成器
 - 包扫描为空时不抛出异常(枚举,别名）
@@ -203,7 +476,7 @@
 ## [v2.1.9] 2018.01.28 代号：怀念（纪念 2017 baomidou 组织小伙伴 MP 共同成长之路，奔向 2018 旺旺旺）
 - page 分页新增控制是否优化 Count Sql 设置
 ```
-// 不进行 count sql 优化 
+// 不进行 count sql 优化
 page.setOptimizeCountSql(false);
 ```
 - 注入定义填充，支持sql注入器,主键生成器.
@@ -291,7 +564,7 @@ mybatis-plus:
 - k 神 全部覆盖测试用例
 
 
-## [v2.1.7] 2017.12.11 代号：清风徐来 ， 该版本号存在 bug 请改为 2.1.8-SNAPSHOT +   
+## [v2.1.7] 2017.12.11 代号：清风徐来 ， 该版本号存在 bug 请改为 2.1.8-SNAPSHOT +
 - 枚举处理：基本类型，Number类型，String类型
 - IGDRW:源码注释错误，容易给人误导 注释错误问题
 - 炮灰 PR !42:添加分页构造方法重载 添加分页构造方法重载
@@ -313,7 +586,7 @@ mybatis-plus:
 - 解决 gitee issue IGAPX 通用枚举 bigdecimal 类型映射
 - druid补充,填充字段修改
 - 修复 kotlin 代码生成部分逻辑 Bug
-- 合并 gitee pr 40 updateAllColumn****等方法排除fill = FieldFill.INSERT注释的字段 感谢 Elsif 
+- 合并 gitee pr 40 updateAllColumn****等方法排除fill = FieldFill.INSERT注释的字段 感谢 Elsif
 - 构造模式设置 kotlin 修改
 - Sql 工具类反射实例优化
 - 其他优化
@@ -336,7 +609,7 @@ mybatis-plus:
 - 其他优化
 
 
-## [v2.1.2] 2017.09.17 代号： X	
+## [v2.1.2] 2017.09.17 代号： X
 - 修复代码生成器 Bug
 - fixed gitee issues/IF2DY
 - 修改 page 可链式操作
@@ -558,7 +831,7 @@ mybatis-plus:
 - Wrapper增加ne方法
 - 修复Mybatis动态参数无法生成totalCount问题
 - 代码结构优化，生成器模板优化
-- 解决issus[138,140,142,148,151,152,153,156,157]，具体请查看里程碑[mybatis-plus 2.0.1 计划](http://git.oschina.net/baomidou/mybatis-plus/milestones/2)中所有issus
+- 解决issus[138,140,142,148,151,152,153,156,157]，具体请查看里程碑[mybatis-plus 2.0.1 计划](https://gitee.com/baomidou/mybatis-plus/milestones/2)中所有issus
 
 ## [v2.0.0] 2016.12.11
 
@@ -586,7 +859,7 @@ mybatis-plus:
 - 精简底层Service、Mapper继承结构
 - 不喜欢在XML中写SQL的福音，新增执行SQL方式，具体请查看SqlQuery
 - 优化代码结构
-- 解决issus[95,96,98,100,103,104,108,114,119,121,123,124,125,126,127,128,131,133,134,135]，具体请查看里程碑[mybatis-plus 2.0 计划](http://git.oschina.net/baomidou/mybatis-plus/milestones/1)中所有issus
+- 解决issus[95,96,98,100,103,104,108,114,119,121,123,124,125,126,127,128,131,133,134,135]，具体请查看里程碑[mybatis-plus 2.0 计划](https://gitee.com/baomidou/mybatis-plus/milestones/1)中所有issus
 
 ## [v1.4.9] 2016.10.28
 

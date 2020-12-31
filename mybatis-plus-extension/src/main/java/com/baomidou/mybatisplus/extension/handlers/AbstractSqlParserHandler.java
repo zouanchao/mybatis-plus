@@ -1,17 +1,17 @@
 /*
- * Copyright (c) 2011-2020, hubin (jobob@qq.com).
- * <p>
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not
- * use this file except in compliance with the License. You may obtain a copy of
- * the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ * Copyright (c) 2011-2020, baomidou (jobob@qq.com).
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations under
- * the License.
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package com.baomidou.mybatisplus.extension.handlers;
 
@@ -23,14 +23,15 @@ import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.core.toolkit.PluginUtils;
 import lombok.Data;
 import lombok.experimental.Accessors;
+import org.apache.ibatis.executor.statement.CallableStatementHandler;
+import org.apache.ibatis.executor.statement.StatementHandler;
 import org.apache.ibatis.reflection.MetaObject;
+import org.apache.ibatis.reflection.SystemMetaObject;
 
 import java.util.List;
 
 /**
- * <p>
  * SQL 解析处理器
- * </p>
  *
  * @author hubin
  * @since 2016-08-31
@@ -47,27 +48,39 @@ public abstract class AbstractSqlParserHandler {
      */
     protected void sqlParser(MetaObject metaObject) {
         if (null != metaObject) {
+            Object originalObject = metaObject.getOriginalObject();
+            StatementHandler statementHandler = PluginUtils.realTarget(originalObject);
+            metaObject = SystemMetaObject.forObject(statementHandler);
+
             if (null != this.sqlParserFilter && this.sqlParserFilter.doFilter(metaObject)) {
                 return;
             }
+
+            // @SqlParser(filter = true) 跳过该方法解析
+            if (SqlParserHelper.getSqlParserInfo(metaObject)) {
+                return;
+            }
+
             // SQL 解析
             if (CollectionUtils.isNotEmpty(this.sqlParserList)) {
-                // @SqlParser(filter = true) 跳过该方法解析
-                if (SqlParserHelper.getSqlParserInfo(metaObject)) {
-                    return;
-                }
-                // 标记是否修改过 SQL
-                int flag = 0;
-                String originalSql = (String) metaObject.getValue(PluginUtils.DELEGATE_BOUNDSQL_SQL);
-                for (ISqlParser sqlParser : this.sqlParserList) {
-                    SqlInfo sqlInfo = sqlParser.parser(metaObject, originalSql);
-                    if (null != sqlInfo) {
-                        originalSql = sqlInfo.getSql();
-                        ++flag;
+                // 好像不用判断也行,为了保险起见,还是加上吧.
+                statementHandler = metaObject.hasGetter("delegate") ? (StatementHandler) metaObject.getValue("delegate") : statementHandler;
+                if (!(statementHandler instanceof CallableStatementHandler)) {
+                    // 标记是否修改过 SQL
+                    boolean sqlChangedFlag = false;
+                    String originalSql = (String) metaObject.getValue(PluginUtils.DELEGATE_BOUNDSQL_SQL);
+                    for (ISqlParser sqlParser : this.sqlParserList) {
+                        if (sqlParser.doFilter(metaObject, originalSql)) {
+                            SqlInfo sqlInfo = sqlParser.parser(metaObject, originalSql);
+                            if (null != sqlInfo) {
+                                originalSql = sqlInfo.getSql();
+                                sqlChangedFlag = true;
+                            }
+                        }
                     }
-                }
-                if (flag >= 1) {
-                    metaObject.setValue(PluginUtils.DELEGATE_BOUNDSQL_SQL, originalSql);
+                    if (sqlChangedFlag) {
+                        metaObject.setValue(PluginUtils.DELEGATE_BOUNDSQL_SQL, originalSql);
+                    }
                 }
             }
         }

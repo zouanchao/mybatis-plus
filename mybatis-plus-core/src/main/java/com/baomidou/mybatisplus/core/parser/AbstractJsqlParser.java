@@ -1,17 +1,17 @@
 /*
- * Copyright (c) 2011-2020, hubin (jobob@qq.com).
- * <p>
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not
- * use this file except in compliance with the License. You may obtain a copy of
- * the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ * Copyright (c) 2011-2020, baomidou (jobob@qq.com).
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations under
- * the License.
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package com.baomidou.mybatisplus.core.parser;
 
@@ -30,9 +30,7 @@ import org.apache.ibatis.logging.LogFactory;
 import org.apache.ibatis.reflection.MetaObject;
 
 /**
- * <p>
  * 抽象 SQL 解析类
- * </p>
  *
  * @author hubin
  * @since 2017-06-20
@@ -45,9 +43,7 @@ public abstract class AbstractJsqlParser implements ISqlParser {
     protected final Log logger = LogFactory.getLog(this.getClass());
 
     /**
-     * <p>
      * 解析 SQL 方法
-     * </p>
      *
      * @param metaObject 元对象
      * @param sql        SQL 语句
@@ -58,7 +54,9 @@ public abstract class AbstractJsqlParser implements ISqlParser {
     public SqlInfo parser(MetaObject metaObject, String sql) {
         if (this.allowProcess(metaObject)) {
             try {
-                logger.debug("Original SQL: " + sql);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Original SQL: " + sql);
+                }
                 // fixed github pull/295
                 StringBuilder sqlStringBuilder = new StringBuilder();
                 Statements statements = CCJSqlParserUtil.parseStatements(sql);
@@ -82,9 +80,7 @@ public abstract class AbstractJsqlParser implements ISqlParser {
     }
 
     /**
-     * <p>
      * 执行 SQL 解析
-     * </p>
      *
      * @param statement JsqlParser Statement
      * @return
@@ -99,7 +95,9 @@ public abstract class AbstractJsqlParser implements ISqlParser {
         } else if (statement instanceof Delete) {
             this.processDelete((Delete) statement);
         }
-        logger.debug("parser sql: " + statement.toString());
+        if (logger.isDebugEnabled()) {
+            logger.debug("parser sql: " + statement.toString());
+        }
         return SqlInfo.newInstance().setSql(statement.toString());
     }
 
@@ -124,10 +122,8 @@ public abstract class AbstractJsqlParser implements ISqlParser {
     public abstract void processSelectBody(SelectBody selectBody);
 
     /**
-     * <p>
-     * 判断是否允许执行<br>
-     * 例如：逻辑删除只解析 delete , update 操作
-     * </p>
+     * 判断是否允许执行
+     * <p>例如：逻辑删除只解析 delete , update 操作</p>
      *
      * @param metaObject 元对象
      * @return true

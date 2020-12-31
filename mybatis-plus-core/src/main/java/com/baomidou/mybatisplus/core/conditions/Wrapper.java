@@ -1,34 +1,31 @@
 /*
- * Copyright (c) 2011-2020, hubin (jobob@qq.com).
- * <p>
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not
- * use this file except in compliance with the License. You may obtain a copy of
- * the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ * Copyright (c) 2011-2020, baomidou (jobob@qq.com).
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations under
- * the License.
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package com.baomidou.mybatisplus.core.conditions;
 
 import com.baomidou.mybatisplus.core.conditions.segments.MergeSegments;
+import com.baomidou.mybatisplus.core.conditions.segments.NormalSegmentList;
 import com.baomidou.mybatisplus.core.metadata.TableFieldInfo;
 import com.baomidou.mybatisplus.core.metadata.TableInfo;
-import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
-import com.baomidou.mybatisplus.core.toolkit.ReflectionKit;
-import com.baomidou.mybatisplus.core.toolkit.StringUtils;
-import com.baomidou.mybatisplus.core.toolkit.TableInfoHelper;
+import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
+import com.baomidou.mybatisplus.core.toolkit.*;
 
 import java.util.Objects;
 
 /**
- * <p>
  * 条件构造抽象类
- * </p>
  *
  * @author hubin
  * @since 2018-05-25
@@ -37,13 +34,27 @@ import java.util.Objects;
 public abstract class Wrapper<T> implements ISqlSegment {
 
     /**
-     * <p>
      * 实体对象（子类实现）
-     * </p>
      *
      * @return 泛型 T
      */
     public abstract T getEntity();
+
+    public String getSqlSelect() {
+        return null;
+    }
+
+    public String getSqlSet() {
+        return null;
+    }
+
+    public String getSqlComment() {
+        return null;
+    }
+
+    public String getSqlFirst() {
+        return null;
+    }
 
     /**
      * 获取 MergeSegments
@@ -52,14 +63,30 @@ public abstract class Wrapper<T> implements ISqlSegment {
 
     /**
      * 获取自定义SQL 简化自定义XML复杂情况
-     * 使用方法
-     * `自定义sql` + ${ew.customSqlSegment}
-     * <p>1.逻辑删除需要自己拼接条件 (之前自定义也同样)</p>
-     * <p>2.不支持wrapper中附带实体的情况 (wrapper自带实体会更麻烦)</p>
-     * <p>3.用法 ${ew.customSqlSegment} (不需要where标签包裹,切记!)</>
-     * <p>4.ew是wrapper定义别名,可自行替换</>
+     * <p>
+     * 使用方法: `select xxx from table` + ${ew.customSqlSegment}
+     * <p>
+     * 注意事项:
+     * 1. 逻辑删除需要自己拼接条件 (之前自定义也同样)
+     * 2. 不支持wrapper中附带实体的情况 (wrapper自带实体会更麻烦)
+     * 3. 用法 ${ew.customSqlSegment} (不需要where标签包裹,切记!)
+     * 4. ew是wrapper定义别名,不能使用其他的替换
      */
-    public abstract String getCustomSqlSegment();
+    public String getCustomSqlSegment() {
+        MergeSegments expression = getExpression();
+        if (Objects.nonNull(expression)) {
+            NormalSegmentList normal = expression.getNormal();
+            String sqlSegment = getSqlSegment();
+            if (StringUtils.isNotBlank(sqlSegment)) {
+                if (normal.isEmpty()) {
+                    return sqlSegment;
+                } else {
+                    return Constants.WHERE + StringPool.SPACE + sqlSegment;
+                }
+            }
+        }
+        return StringPool.EMPTY;
+    }
 
     /**
      * 查询条件为空(包含entity)
@@ -106,22 +133,24 @@ public abstract class Wrapper<T> implements ISqlSegment {
         if (tableInfo.getFieldList().stream().anyMatch(e -> fieldStrategyMatch(entity, e))) {
             return true;
         }
-        return StringUtils.isNotEmpty(tableInfo.getKeyProperty()) ? Objects.nonNull(ReflectionKit.getMethodValue(entity, tableInfo.getKeyProperty())) : false;
+        return StringUtils.isNotBlank(tableInfo.getKeyProperty()) ? Objects.nonNull(ReflectionKit.getFieldValue(entity, tableInfo.getKeyProperty())) : false;
     }
 
     /**
      * 根据实体FieldStrategy属性来决定判断逻辑
      */
     private boolean fieldStrategyMatch(T entity, TableFieldInfo e) {
-        switch (e.getFieldStrategy()) {
+        switch (e.getWhereStrategy()) {
             case NOT_NULL:
-                return Objects.nonNull(ReflectionKit.getMethodValue(entity, e.getProperty()));
+                return Objects.nonNull(ReflectionKit.getFieldValue(entity, e.getProperty()));
             case IGNORED:
                 return true;
             case NOT_EMPTY:
-                return StringUtils.checkValNotNull(ReflectionKit.getMethodValue(entity, e.getProperty()));
+                return StringUtils.checkValNotNull(ReflectionKit.getFieldValue(entity, e.getProperty()));
+            case NEVER:
+                return false;
             default:
-                return Objects.nonNull(ReflectionKit.getMethodValue(entity, e.getProperty()));
+                return Objects.nonNull(ReflectionKit.getFieldValue(entity, e.getProperty()));
         }
     }
 
@@ -133,4 +162,21 @@ public abstract class Wrapper<T> implements ISqlSegment {
     public boolean isEmptyOfEntity() {
         return !nonEmptyOfEntity();
     }
+
+    /**
+     * 获取格式化后的执行sql
+     *
+     * @return sql
+     * @since 3.3.1
+     */
+    public String getTargetSql() {
+        return getSqlSegment().replaceAll("#\\{.+?}", "?");
+    }
+
+    /**
+     * 条件清空
+     *
+     * @since 3.3.1
+     */
+    abstract public void clear();
 }

@@ -1,27 +1,42 @@
+/*
+ * Copyright (c) 2011-2020, baomidou (jobob@qq.com).
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.baomidou.mybatisplus.extension.toolkit;
 
 import com.baomidou.mybatisplus.core.toolkit.Assert;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 
 /**
- * <p>
- * VersionUtils ，比较版本号
- * </p>
+ * VersionUtils，比较版本号
  *
  * @author Caratacus
  * @since 2016-12-5
+ * @deprecated 3.4.1
  */
+@Deprecated
 public class VersionUtils {
 
     /**
-     * 比较版本号的大小,前者大则返回一个正数,后者大返回一个负数,相等则返回0
+     * 比较版本号的大小，前者大则返回一个正数,后者大返回一个负数,相等则返回0
      *
-     * @param version1
-     * @param version2
-     * @return
+     * @param version1 ignore
+     * @param version2 ignore
+     * @return ignore
      */
     public static int compareVersion(String version1, String version2) {
-        Assert.isTrue(!StringUtils.isEmpty(version1) && !StringUtils.isEmpty(version2),
+        Assert.isTrue(!StringUtils.isBlank(version1) && !StringUtils.isBlank(version2),
             "Error: CompareVersion Error: Illegal Argument !");
         // 切割点 "."；
         String[] versionArray1 = version1.split("\\.");
@@ -43,9 +58,9 @@ public class VersionUtils {
     /**
      * 比较版本号 true
      *
-     * @param version1
-     * @param version2
-     * @return boolean true v1>=v2 false相反
+     * @param version1 ignore
+     * @param version2 ignore
+     * @return boolean true v1 &gt;= v2 false 相反
      */
     public static boolean compare(String version1, String version2) {
         int num = compareVersion(version1, version2);

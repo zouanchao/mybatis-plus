@@ -1,30 +1,34 @@
 /*
- * Copyright (c) 2011-2020, hubin (jobob@qq.com).
- * <p>
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not
- * use this file except in compliance with the License. You may obtain a copy of
- * the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ * Copyright (c) 2011-2020, baomidou (jobob@qq.com).
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations under
- * the License.
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package com.baomidou.mybatisplus.extension.plugins.pagination;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.metadata.OrderItem;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
+import lombok.Getter;
+import lombok.Setter;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Predicate;
 
 /**
- * <p>
  * 简单分页模型
- * </p>
  *
  * @author hubin
  * @since 2018-06-09
@@ -36,52 +40,59 @@ public class Page<T> implements IPage<T> {
     /**
      * 查询数据列表
      */
-    private List<T> records = Collections.emptyList();
+    protected List<T> records = Collections.emptyList();
+
     /**
      * 总数
      */
-    private long total = 0;
+    protected long total = 0;
     /**
      * 每页显示条数，默认 10
      */
-    private long size = 10;
+    protected long size = 10;
+
     /**
      * 当前页
      */
-    private long current = 1;
+    protected long current = 1;
+
     /**
-     * <p>
-     * SQL 排序 ASC 数组
-     * </p>
+     * 排序字段信息
      */
-    private String[] ascs;
+    @Getter
+    @Setter
+    protected List<OrderItem> orders = new ArrayList<>();
+
     /**
-     * <p>
-     * SQL 排序 DESC 数组
-     * </p>
-     */
-    private String[] descs;
-    /**
-     * <p>
      * 自动优化 COUNT SQL
-     * </p>
      */
-    private boolean optimizeCountSql = true;
+    protected boolean optimizeCountSql = true;
     /**
-     * <p>
      * 是否进行 count 查询
-     * </p>
      */
-    private boolean isSearchCount = true;
+    protected boolean isSearchCount = true;
+    /**
+     * 是否命中count缓存
+     */
+    protected boolean hitCount = false;
+    /**
+     * countId
+     */
+    @Getter
+    @Setter
+    protected String countId;
+    /**
+     * countId
+     */
+    @Getter
+    @Setter
+    protected Long maxLimit;
 
     public Page() {
-        // to do nothing
     }
 
     /**
-     * <p>
      * 分页构造函数
-     * </p>
      *
      * @param current 当前页
      * @param size    每页显示条数
@@ -108,9 +119,7 @@ public class Page<T> implements IPage<T> {
     }
 
     /**
-     * <p>
      * 是否存在上一页
-     * </p>
      *
      * @return true / false
      */
@@ -119,9 +128,7 @@ public class Page<T> implements IPage<T> {
     }
 
     /**
-     * <p>
      * 是否存在下一页
-     * </p>
      *
      * @return true / false
      */
@@ -174,57 +181,143 @@ public class Page<T> implements IPage<T> {
     }
 
     @Override
-    public String[] ascs() {
-        return ascs;
+    public String countId() {
+        return getCountId();
     }
 
+    @Override
+    public Long maxLimit() {
+        return getMaxLimit();
+    }
+
+    /**
+     * 查找 order 中正序排序的字段数组
+     *
+     * @param filter 过滤器
+     * @return 返回正序排列的字段数组
+     */
+    private String[] mapOrderToArray(Predicate<OrderItem> filter) {
+        List<String> columns = new ArrayList<>(orders.size());
+        orders.forEach(i -> {
+            if (filter.test(i)) {
+                columns.add(i.getColumn());
+            }
+        });
+        return columns.toArray(new String[0]);
+    }
+
+    /**
+     * 移除符合条件的条件
+     *
+     * @param filter 条件判断
+     */
+    private void removeOrder(Predicate<OrderItem> filter) {
+        for (int i = orders.size() - 1; i >= 0; i--) {
+            if (filter.test(orders.get(i))) {
+                orders.remove(i);
+            }
+        }
+    }
+
+    /**
+     * 添加新的排序条件，构造条件可以使用工厂：{@link OrderItem#build(String, boolean)}
+     *
+     * @param items 条件
+     * @return 返回分页参数本身
+     */
+    public Page<T> addOrder(OrderItem... items) {
+        orders.addAll(Arrays.asList(items));
+        return this;
+    }
+
+    /**
+     * 添加新的排序条件，构造条件可以使用工厂：{@link OrderItem#build(String, boolean)}
+     *
+     * @param items 条件
+     * @return 返回分页参数本身
+     */
+    public Page<T> addOrder(List<OrderItem> items) {
+        orders.addAll(items);
+        return this;
+    }
+
+    /**
+     * 设置需要进行正序排序的字段
+     * <p>
+     * Replaced:{@link #addOrder(OrderItem...)}
+     *
+     * @param ascs 字段
+     * @return 返回自身
+     * @deprecated 3.2.0
+     */
+    @Deprecated
     public Page<T> setAscs(List<String> ascs) {
-        if (CollectionUtils.isNotEmpty(ascs)) {
-            this.ascs = ascs.toArray(new String[0]);
+        return CollectionUtils.isNotEmpty(ascs) ? setAsc(ascs.toArray(new String[0])) : this;
+    }
+
+    /**
+     * 升序
+     * <p>
+     * Replaced:{@link #addOrder(OrderItem...)}
+     *
+     * @param ascs 多个升序字段
+     * @deprecated 3.2.0
+     */
+    @Deprecated
+    public Page<T> setAsc(String... ascs) {
+        // 保证原来方法 set 的语意
+        removeOrder(OrderItem::isAsc);
+        for (String s : ascs) {
+            addOrder(OrderItem.asc(s));
         }
         return this;
     }
 
+    /**
+     * Replaced:{@link #addOrder(OrderItem...)}
+     *
+     * @param descs 需要倒序排列的字段
+     * @return 自身
+     * @deprecated 3.2.0
+     */
+    @Deprecated
+    public Page<T> setDescs(List<String> descs) {
+        // 保证原来方法 set 的语意
+        if (CollectionUtils.isNotEmpty(descs)) {
+            removeOrder(item -> !item.isAsc());
+            for (String s : descs) {
+                addOrder(OrderItem.desc(s));
+            }
+        }
+        return this;
+    }
 
     /**
+     * 降序，这方法名不知道是谁起的
      * <p>
-     * 升序
-     * </p>
+     * Replaced:{@link #addOrder(OrderItem...)}
      *
-     * @param ascs 多个升序字段
+     * @param descs 多个降序字段
+     * @deprecated 3.2.0
      */
-    public Page<T> setAsc(String... ascs) {
-        this.ascs = ascs;
+    @Deprecated
+    public Page<T> setDesc(String... descs) {
+        setDescs(Arrays.asList(descs));
         return this;
     }
 
     @Override
-    public String[] descs() {
-        return descs;
-    }
-
-    public Page<T> setDescs(List<String> descs) {
-        if (CollectionUtils.isNotEmpty(descs)) {
-            this.descs = descs.toArray(new String[0]);
-        }
-        return this;
-    }
-
-    /**
-     * <p>
-     * 降序
-     * </p>
-     *
-     * @param descs 多个降序字段
-     */
-    public Page<T> setDesc(String... descs) {
-        this.descs = descs;
-        return this;
+    public List<OrderItem> orders() {
+        return getOrders();
     }
 
     @Override
     public boolean optimizeCountSql() {
         return optimizeCountSql;
+    }
+
+    public boolean isOptimizeCountSql() {
+        return optimizeCountSql();
     }
 
     @Override
@@ -235,7 +328,7 @@ public class Page<T> implements IPage<T> {
         return isSearchCount;
     }
 
-    Page<T> setSearchCount(boolean isSearchCount) {
+    public Page<T> setSearchCount(boolean isSearchCount) {
         this.isSearchCount = isSearchCount;
         return this;
     }
@@ -243,5 +336,19 @@ public class Page<T> implements IPage<T> {
     public Page<T> setOptimizeCountSql(boolean optimizeCountSql) {
         this.optimizeCountSql = optimizeCountSql;
         return this;
+    }
+
+    @Override
+    public void hitCount(boolean hit) {
+        this.hitCount = hit;
+    }
+
+    public void setHitCount(boolean hit) {
+        this.hitCount = hit;
+    }
+
+    @Override
+    public boolean isHitCount() {
+        return hitCount;
     }
 }

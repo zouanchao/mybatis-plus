@@ -1,33 +1,32 @@
 /*
- * Copyright (c) 2011-2020, hubin (jobob@qq.com).
- * <p>
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not
- * use this file except in compliance with the License. You may obtain a copy of
- * the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ * Copyright (c) 2011-2020, baomidou (jobob@qq.com).
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations under
- * the License.
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package com.baomidou.mybatisplus.core.toolkit;
+
+import org.apache.ibatis.logging.Log;
+import org.apache.ibatis.logging.LogFactory;
 
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.util.concurrent.ThreadLocalRandom;
 
-import org.apache.ibatis.logging.Log;
-import org.apache.ibatis.logging.LogFactory;
-
 /**
- * <p>
- * 分布式高效有序ID生产黑科技(sequence) <br>
- * 优化开源项目：http://git.oschina.net/yu120/sequence
- * </p>
+ * 分布式高效有序 ID 生产黑科技(sequence)
+ *
+ * <p>优化开源项目：https://gitee.com/yu120/sequence</p>
  *
  * @author hubin
  * @since 2016-08-18
@@ -79,32 +78,28 @@ public class Sequence {
     }
 
     /**
-     * <p>
      * 有参构造器
-     * </p>
      *
      * @param workerId     工作机器 ID
      * @param datacenterId 序列号
      */
     public Sequence(long workerId, long datacenterId) {
         Assert.isFalse(workerId > maxWorkerId || workerId < 0,
-            String.format("worker Id can't be greater than %d or less than 0", maxWorkerId));
+                String.format("worker Id can't be greater than %d or less than 0", maxWorkerId));
         Assert.isFalse(datacenterId > maxDatacenterId || datacenterId < 0,
-            String.format("datacenter Id can't be greater than %d or less than 0", maxDatacenterId));
+                String.format("datacenter Id can't be greater than %d or less than 0", maxDatacenterId));
         this.workerId = workerId;
         this.datacenterId = datacenterId;
     }
 
     /**
-     * <p>
      * 获取 maxWorkerId
-     * </p>
      */
     protected static long getMaxWorkerId(long datacenterId, long maxWorkerId) {
         StringBuilder mpid = new StringBuilder();
         mpid.append(datacenterId);
         String name = ManagementFactory.getRuntimeMXBean().getName();
-        if (StringUtils.isNotEmpty(name)) {
+        if (StringUtils.isNotBlank(name)) {
             /*
              * GET jvmPid
              */
@@ -117,9 +112,7 @@ public class Sequence {
     }
 
     /**
-     * <p>
      * 数据标识id部分
-     * </p>
      */
     protected static long getDatacenterId(long maxDatacenterId) {
         long id = 0L;
@@ -131,7 +124,7 @@ public class Sequence {
             } else {
                 byte[] mac = network.getHardwareAddress();
                 if (null != mac) {
-                    id = ((0x000000FF & (long) mac[mac.length - 1]) | (0x0000FF00 & (((long) mac[mac.length - 2]) << 8))) >> 6;
+                    id = ((0x000000FF & (long) mac[mac.length - 2]) | (0x0000FF00 & (((long) mac[mac.length - 1]) << 8))) >> 6;
                     id = id % (maxDatacenterId + 1);
                 }
             }
@@ -142,9 +135,9 @@ public class Sequence {
     }
 
     /**
-     * 获取下一个ID
+     * 获取下一个 ID
      *
-     * @return
+     * @return 下一个 ID
      */
     public synchronized long nextId() {
         long timestamp = timeGen();
@@ -182,9 +175,9 @@ public class Sequence {
 
         // 时间戳部分 | 数据中心部分 | 机器标识部分 | 序列号部分
         return ((timestamp - twepoch) << timestampLeftShift)
-            | (datacenterId << datacenterIdShift)
-            | (workerId << workerIdShift)
-            | sequence;
+                | (datacenterId << datacenterIdShift)
+                | (workerId << workerIdShift)
+                | sequence;
     }
 
     protected long tilNextMillis(long lastTimestamp) {

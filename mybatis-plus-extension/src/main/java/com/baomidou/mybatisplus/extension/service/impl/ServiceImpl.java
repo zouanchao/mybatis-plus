@@ -1,29 +1,31 @@
 /*
- * Copyright (c) 2011-2016, hubin (jobob@qq.com).
- * <p>
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not
- * use this file except in compliance with the License. You may obtain a copy of
- * the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ * Copyright (c) 2011-2020, baomidou (jobob@qq.com).
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations under
- * the License.
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package com.baomidou.mybatisplus.extension.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.enums.SqlMethod;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.metadata.TableInfo;
+import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.baomidou.mybatisplus.core.toolkit.*;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.toolkit.SqlHelper;
 import org.apache.ibatis.binding.MapperMethod;
+import org.apache.ibatis.logging.Log;
+import org.apache.ibatis.logging.LogFactory;
 import org.apache.ibatis.session.SqlSession;
 import org.mybatis.spring.SqlSessionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,16 +33,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
- * <p>
- * IService 实现类（ 泛型：M 是 mapper 对象，T 是实体 ， PK 是主键泛型 ）
- * </p>
+ * IService 实现类（ 泛型：M 是 mapper 对象，T 是实体 ）
  *
  * @author hubin
  * @since 2018-06-23
@@ -48,87 +48,106 @@ import java.util.stream.Collectors;
 @SuppressWarnings("unchecked")
 public class ServiceImpl<M extends BaseMapper<T>, T> implements IService<T> {
 
+    protected Log log = LogFactory.getLog(getClass());
+
     @Autowired
     protected M baseMapper;
 
+    @Override
+    public M getBaseMapper() {
+        return baseMapper;
+    }
+
+    protected Class<T> entityClass = currentModelClass();
+
+    @Override
+    public Class<T> getEntityClass() {
+        return entityClass;
+    }
+
+    protected Class<T> mapperClass = currentMapperClass();
+
     /**
-     * <p>
      * 判断数据库操作是否成功
-     * </p>
      *
      * @param result 数据库操作返回影响条数
      * @return boolean
+     * @deprecated 3.3.1
      */
+    @Deprecated
     protected boolean retBool(Integer result) {
         return SqlHelper.retBool(result);
     }
 
+    protected Class<T> currentMapperClass() {
+        return (Class<T>) ReflectionKit.getSuperClassGenericType(getClass(), 0);
+    }
+
     protected Class<T> currentModelClass() {
-        return ReflectionKit.getSuperClassGenericType(getClass(), 1);
+        return (Class<T>) ReflectionKit.getSuperClassGenericType(getClass(), 1);
     }
 
     /**
-     * <p>
      * 批量操作 SqlSession
-     * </p>
+     *
+     * @deprecated 3.3.0
      */
+    @Deprecated
     protected SqlSession sqlSessionBatch() {
-        return SqlHelper.sqlSessionBatch(currentModelClass());
+        return SqlHelper.sqlSessionBatch(entityClass);
     }
 
     /**
      * 释放sqlSession
      *
      * @param sqlSession session
+     * @deprecated 3.3.0
      */
+    @Deprecated
     protected void closeSqlSession(SqlSession sqlSession) {
-        SqlSessionUtils.closeSqlSession(sqlSession, GlobalConfigUtils.currentSessionFactory(currentModelClass()));
+        SqlSessionUtils.closeSqlSession(sqlSession, GlobalConfigUtils.currentSessionFactory(entityClass));
     }
 
     /**
-     * 获取SqlStatement
+     * 获取 SqlStatement
      *
-     * @param sqlMethod
-     * @return
+     * @param sqlMethod ignore
+     * @return ignore
+     * @see #getSqlStatement(SqlMethod)
+     * @deprecated 3.4.0
      */
+    @Deprecated
     protected String sqlStatement(SqlMethod sqlMethod) {
-        return SqlHelper.table(currentModelClass()).getSqlStatement(sqlMethod.getMethod());
-    }
-
-    @Override
-    public boolean save(T entity) {
-        return retBool(baseMapper.insert(entity));
+        return SqlHelper.table(entityClass).getSqlStatement(sqlMethod.getMethod());
     }
 
     /**
      * 批量插入
      *
-     * @param entityList
-     * @param batchSize
-     * @return
+     * @param entityList ignore
+     * @param batchSize  ignore
+     * @return ignore
      */
     @Transactional(rollbackFor = Exception.class)
     @Override
     public boolean saveBatch(Collection<T> entityList, int batchSize) {
-        String sqlStatement = sqlStatement(SqlMethod.INSERT_ONE);
-        try (SqlSession batchSqlSession = sqlSessionBatch()) {
-            int i = 0;
-            for (T anEntityList : entityList) {
-                batchSqlSession.insert(sqlStatement, anEntityList);
-                if (i >= 1 && i % batchSize == 0) {
-                    batchSqlSession.flushStatements();
-                }
-                i++;
-            }
-            batchSqlSession.flushStatements();
-        }
-        return true;
+        String sqlStatement = getSqlStatement(SqlMethod.INSERT_ONE);
+        return executeBatch(entityList, batchSize, (sqlSession, entity) -> sqlSession.insert(sqlStatement, entity));
     }
 
     /**
-     * <p>
+     * 获取mapperStatementId
+     *
+     * @param sqlMethod 方法名
+     * @return 命名id
+     * @since 3.4.0
+     */
+    protected String getSqlStatement(SqlMethod sqlMethod) {
+        return SqlHelper.getSqlStatement(mapperClass, sqlMethod);
+    }
+
+    /**
      * TableId 注解存在更新记录，否插入一条记录
-     * </p>
      *
      * @param entity 实体对象
      * @return boolean
@@ -137,12 +156,11 @@ public class ServiceImpl<M extends BaseMapper<T>, T> implements IService<T> {
     @Override
     public boolean saveOrUpdate(T entity) {
         if (null != entity) {
-            Class<?> cls = entity.getClass();
-            TableInfo tableInfo = TableInfoHelper.getTableInfo(cls);
+            TableInfo tableInfo = TableInfoHelper.getTableInfo(this.entityClass);
             Assert.notNull(tableInfo, "error: can not execute. because can not find cache of TableInfo for entity!");
             String keyProperty = tableInfo.getKeyProperty();
             Assert.notEmpty(keyProperty, "error: can not execute. because can not find column for id from entity!");
-            Object idVal = ReflectionKit.getMethodValue(cls, entity, tableInfo.getKeyProperty());
+            Object idVal = ReflectionKit.getFieldValue(entity, tableInfo.getKeyProperty());
             return StringUtils.checkValNull(idVal) || Objects.isNull(getById((Serializable) idVal)) ? save(entity) : updateById(entity);
         }
         return false;
@@ -151,99 +169,30 @@ public class ServiceImpl<M extends BaseMapper<T>, T> implements IService<T> {
     @Transactional(rollbackFor = Exception.class)
     @Override
     public boolean saveOrUpdateBatch(Collection<T> entityList, int batchSize) {
-        Assert.notEmpty(entityList, "error: entityList must not be empty");
-        Class<?> cls = currentModelClass();
-        TableInfo tableInfo = TableInfoHelper.getTableInfo(cls);
+        TableInfo tableInfo = TableInfoHelper.getTableInfo(entityClass);
         Assert.notNull(tableInfo, "error: can not execute. because can not find cache of TableInfo for entity!");
         String keyProperty = tableInfo.getKeyProperty();
         Assert.notEmpty(keyProperty, "error: can not execute. because can not find column for id from entity!");
-        try (SqlSession batchSqlSession = sqlSessionBatch()) {
-            int i = 0;
-            for (T entity : entityList) {
-                Object idVal = ReflectionKit.getMethodValue(cls, entity, keyProperty);
-                if (StringUtils.checkValNull(idVal) || Objects.isNull(getById((Serializable) idVal))) {
-                    batchSqlSession.insert(sqlStatement(SqlMethod.INSERT_ONE), entity);
-                } else {
-                    MapperMethod.ParamMap<T> param = new MapperMethod.ParamMap<>();
-                    param.put(Constants.ENTITY, entity);
-                    batchSqlSession.update(sqlStatement(SqlMethod.UPDATE_BY_ID), param);
-                }
-                //不知道以后会不会有人说更新失败了还要执行插入 😂😂😂
-                if (i >= 1 && i % batchSize == 0) {
-                    batchSqlSession.flushStatements();
-                }
-                i++;
-            }
-            batchSqlSession.flushStatements();
-        }
-        return true;
-    }
-
-    @Override
-    public boolean removeById(Serializable id) {
-        return SqlHelper.delBool(baseMapper.deleteById(id));
-    }
-
-    @Override
-    public boolean removeByMap(Map<String, Object> columnMap) {
-        Assert.notEmpty(columnMap, "error: columnMap must not be empty");
-        return SqlHelper.delBool(baseMapper.deleteByMap(columnMap));
-    }
-
-    @Override
-    public boolean remove(Wrapper<T> wrapper) {
-        return SqlHelper.delBool(baseMapper.delete(wrapper));
-    }
-
-    @Override
-    public boolean removeByIds(Collection<? extends Serializable> idList) {
-        return SqlHelper.delBool(baseMapper.deleteBatchIds(idList));
-    }
-
-    @Override
-    public boolean updateById(T entity) {
-        return retBool(baseMapper.updateById(entity));
-    }
-
-    @Override
-    public boolean update(T entity, Wrapper<T> updateWrapper) {
-        return retBool(baseMapper.update(entity, updateWrapper));
+        return SqlHelper.saveOrUpdateBatch(this.entityClass, this.mapperClass, this.log, entityList, batchSize, (sqlSession, entity) -> {
+            Object idVal = ReflectionKit.getFieldValue(entity, keyProperty);
+            return StringUtils.checkValNull(idVal)
+                || CollectionUtils.isEmpty(sqlSession.selectList(getSqlStatement(SqlMethod.SELECT_BY_ID), entity));
+        }, (sqlSession, entity) -> {
+            MapperMethod.ParamMap<T> param = new MapperMethod.ParamMap<>();
+            param.put(Constants.ENTITY, entity);
+            sqlSession.update(getSqlStatement(SqlMethod.UPDATE_BY_ID), param);
+        });
     }
 
     @Transactional(rollbackFor = Exception.class)
     @Override
     public boolean updateBatchById(Collection<T> entityList, int batchSize) {
-        Assert.notEmpty(entityList, "error: entityList must not be empty");
-        String sqlStatement = sqlStatement(SqlMethod.UPDATE_BY_ID);
-        try (SqlSession batchSqlSession = sqlSessionBatch()) {
-            int i = 0;
-            for (T anEntityList : entityList) {
-                MapperMethod.ParamMap<T> param = new MapperMethod.ParamMap<>();
-                param.put(Constants.ENTITY, anEntityList);
-                batchSqlSession.update(sqlStatement, param);
-                if (i >= 1 && i % batchSize == 0) {
-                    batchSqlSession.flushStatements();
-                }
-                i++;
-            }
-            batchSqlSession.flushStatements();
-        }
-        return true;
-    }
-
-    @Override
-    public T getById(Serializable id) {
-        return baseMapper.selectById(id);
-    }
-
-    @Override
-    public Collection<T> listByIds(Collection<? extends Serializable> idList) {
-        return baseMapper.selectBatchIds(idList);
-    }
-
-    @Override
-    public Collection<T> listByMap(Map<String, Object> columnMap) {
-        return baseMapper.selectByMap(columnMap);
+        String sqlStatement = getSqlStatement(SqlMethod.UPDATE_BY_ID);
+        return executeBatch(entityList, batchSize, (sqlSession, entity) -> {
+            MapperMethod.ParamMap<T> param = new MapperMethod.ParamMap<>();
+            param.put(Constants.ENTITY, entity);
+            sqlSession.update(sqlStatement, param);
+        });
     }
 
     @Override
@@ -251,41 +200,56 @@ public class ServiceImpl<M extends BaseMapper<T>, T> implements IService<T> {
         if (throwEx) {
             return baseMapper.selectOne(queryWrapper);
         }
-        return SqlHelper.getObject(baseMapper.selectList(queryWrapper));
+        return SqlHelper.getObject(log, baseMapper.selectList(queryWrapper));
     }
 
     @Override
     public Map<String, Object> getMap(Wrapper<T> queryWrapper) {
-        return SqlHelper.getObject(baseMapper.selectMaps(queryWrapper));
+        return SqlHelper.getObject(log, baseMapper.selectMaps(queryWrapper));
     }
 
     @Override
-    public int count(Wrapper<T> queryWrapper) {
-        return SqlHelper.retCount(baseMapper.selectCount(queryWrapper));
+    public <V> V getObj(Wrapper<T> queryWrapper, Function<? super Object, V> mapper) {
+        return SqlHelper.getObject(log, listObjs(queryWrapper, mapper));
     }
 
-    @Override
-    public List<T> list(Wrapper<T> queryWrapper) {
-        return baseMapper.selectList(queryWrapper);
+    /**
+     * 执行批量操作
+     *
+     * @param consumer consumer
+     * @since 3.3.0
+     * @deprecated 3.3.1 后面我打算移除掉 {@link #executeBatch(Collection, int, BiConsumer)} }.
+     */
+    @Deprecated
+    protected boolean executeBatch(Consumer<SqlSession> consumer) {
+        return SqlHelper.executeBatch(this.entityClass, this.log, consumer);
     }
 
-    @Override
-    public IPage<T> page(IPage<T> page, Wrapper<T> queryWrapper) {
-        return baseMapper.selectPage(page, queryWrapper);
+    /**
+     * 执行批量操作
+     *
+     * @param list      数据集合
+     * @param batchSize 批量大小
+     * @param consumer  执行方法
+     * @param <E>       泛型
+     * @return 操作结果
+     * @since 3.3.1
+     */
+    protected <E> boolean executeBatch(Collection<E> list, int batchSize, BiConsumer<SqlSession, E> consumer) {
+        return SqlHelper.executeBatch(this.entityClass, this.log, list, batchSize, consumer);
     }
 
-    @Override
-    public List<Map<String, Object>> listMaps(Wrapper<T> queryWrapper) {
-        return baseMapper.selectMaps(queryWrapper);
+    /**
+     * 执行批量操作（默认批次提交数量{@link IService#DEFAULT_BATCH_SIZE}）
+     *
+     * @param list     数据集合
+     * @param consumer 执行方法
+     * @param <E>      泛型
+     * @return 操作结果
+     * @since 3.3.1
+     */
+    protected <E> boolean executeBatch(Collection<E> list, BiConsumer<SqlSession, E> consumer) {
+        return executeBatch(list, DEFAULT_BATCH_SIZE, consumer);
     }
 
-    @Override
-    public <V> List<V> listObjs(Wrapper<T> queryWrapper, Function<? super Object, V> mapper) {
-        return baseMapper.selectObjs(queryWrapper).stream().filter(Objects::nonNull).map(mapper).collect(Collectors.toList());
-    }
-
-    @Override
-    public IPage<Map<String, Object>> pageMaps(IPage<T> page, Wrapper<T> queryWrapper) {
-        return baseMapper.selectMapsPage(page, queryWrapper);
-    }
 }

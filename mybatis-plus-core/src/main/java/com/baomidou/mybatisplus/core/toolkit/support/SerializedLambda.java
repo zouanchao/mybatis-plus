@@ -1,12 +1,11 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright (c) 2011-2020, baomidou (jobob@qq.com).
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,10 +22,9 @@ import com.baomidou.mybatisplus.core.toolkit.SerializationUtils;
 import java.io.*;
 
 /**
- * 这个类是从 {@link java.lang.invoke.SerializedLambda} 里面 copy 过来的
+ * 这个类是从 {@link java.lang.invoke.SerializedLambda} 里面 copy 过来的，
  * 字段信息完全一样
- * <p>
- * 负责将一个支持序列的 Function 序列化为 SerializedLambda
+ * <p>负责将一个支持序列的 Function 序列化为 SerializedLambda</p>
  *
  * @author HCL
  * @since 2018/05/10
@@ -53,14 +51,19 @@ public class SerializedLambda implements Serializable {
      * @param lambda lambda对象
      * @return 返回解析后的 SerializedLambda
      */
-    public static SerializedLambda resolve(SFunction lambda) {
+    public static SerializedLambda resolve(SFunction<?, ?> lambda) {
         if (!lambda.getClass().isSynthetic()) {
             throw ExceptionUtils.mpe("该方法仅能传入 lambda 表达式产生的合成类");
         }
         try (ObjectInputStream objIn = new ObjectInputStream(new ByteArrayInputStream(SerializationUtils.serialize(lambda))) {
             @Override
             protected Class<?> resolveClass(ObjectStreamClass objectStreamClass) throws IOException, ClassNotFoundException {
-                Class<?> clazz = super.resolveClass(objectStreamClass);
+                Class<?> clazz;
+                try {
+                    clazz = ClassUtils.toClassConfident(objectStreamClass.getName());
+                } catch (Exception ex) {
+                    clazz = super.resolveClass(objectStreamClass);
+                }
                 return clazz == java.lang.invoke.SerializedLambda.class ? SerializedLambda.class : clazz;
             }
         }) {
@@ -76,7 +79,7 @@ public class SerializedLambda implements Serializable {
      * @return 返回 class 名称
      */
     public String getFunctionalInterfaceClassName() {
-        return normalName(functionalInterfaceClass);
+        return normalizedName(functionalInterfaceClass);
     }
 
     /**
@@ -84,7 +87,7 @@ public class SerializedLambda implements Serializable {
      *
      * @return 实现类
      */
-    public Class getImplClass() {
+    public Class<?> getImplClass() {
         return ClassUtils.toClassConfident(getImplClassName());
     }
 
@@ -94,7 +97,7 @@ public class SerializedLambda implements Serializable {
      * @return 类名
      */
     public String getImplClassName() {
-        return normalName(implClass);
+        return normalizedName(implClass);
     }
 
     /**
@@ -112,8 +115,16 @@ public class SerializedLambda implements Serializable {
      * @param name 名称
      * @return 正常的类名
      */
-    private String normalName(String name) {
+    private String normalizedName(String name) {
         return name.replace('/', '.');
+    }
+
+    /**
+     * @return 获取实例化方法的类型
+     */
+    public Class<?> getInstantiatedType() {
+        String instantiatedTypeName = normalizedName(instantiatedMethodType.substring(2, instantiatedMethodType.indexOf(';')));
+        return ClassUtils.toClassConfident(instantiatedTypeName);
     }
 
     /**
@@ -121,8 +132,12 @@ public class SerializedLambda implements Serializable {
      */
     @Override
     public String toString() {
-        return String.format("%s -> %s::%s", getFunctionalInterfaceClassName(), getImplClass().getSimpleName(),
-            implMethodName);
+        String interfaceName = getFunctionalInterfaceClassName();
+        String implName = getImplClassName();
+        return String.format("%s -> %s::%s",
+                interfaceName.substring(interfaceName.lastIndexOf('.') + 1),
+                implName.substring(implName.lastIndexOf('.') + 1),
+                implMethodName);
     }
 
 }
